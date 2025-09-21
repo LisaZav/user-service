@@ -12,8 +12,14 @@ public class App
     public static void main( String[] args )
     {
         SessionFactory sessionFactory = HibernateConfig.getSessionFactory();
-        System.out.println(sessionFactory.getCurrentSession().toString());
+        System.out.println(">>>>> isClosed: " + sessionFactory.isClosed());
+        System.out.println(">>>>> try To close");
+
         sessionFactory.close();
+        System.out.println(">>>>> isClosed: " + sessionFactory.isClosed());
+
+
+        System.out.println(">>>>>>>>>>> wowowowwowo!!!!!!!");
 
     }
 }

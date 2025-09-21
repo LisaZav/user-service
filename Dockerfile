@@ -1,10 +1,15 @@
+FROM maven:3.8.5-openjdk-17 AS builder
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+
+RUN mvn dependency:go-offline -B
+
+RUN mvn package
+
 FROM openjdk:17-alpine
+WORKDIR /app
 
-RUN apk add --no-cache bash
+COPY --from=builder /app/target/user-service-1.0.jar app.jar
 
-COPY target/your-app.jar /app.jar
-
-COPY wait-for-postgres.sh /wait-for-postgres.sh
-RUN chmod +x /wait-for-postgres.sh
-
-CMD ["/wait-for-postgres.sh", "postgres:5432", "--", "java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
