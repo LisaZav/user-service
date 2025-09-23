@@ -43,7 +43,7 @@ public class UserDaoImpl implements UserDao {
     public Optional<User> findById(Long id) {
         try (Session session = sessionFactory.openSession()) {
             User user = session.find(User.class, id);
-            return Optional.ofNullable(user);  // Оборачиваем результат в Optional для безопасной работы
+            return Optional.ofNullable(user);
         } catch (Exception e) {
             throw new RuntimeException("Ошибка при поиске Usera по ID: " + id, e);
         }
@@ -70,11 +70,9 @@ public class UserDaoImpl implements UserDao {
     @Override
     public List<User> findAll() {
         try (Session session = sessionFactory.openSession()) {
-            // Создаем HQL запрос для получения всех пользователей
             // "FROM User" - эквивалентно "SELECT * FROM users" в SQL
             Query<User> query = session.createQuery("FROM User", User.class);
 
-            // getResultList() возвращает список всех результатов
             return query.getResultList();
         } catch (Exception e) {
             throw new RuntimeException("Ошибка при получении списка пользователей", e);

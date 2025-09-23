@@ -169,9 +169,10 @@ public class UserService {
     }
 
     private boolean isValidEmail(String email) {
-        if (email == null) return false;
-        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-        return email.matches(emailRegex);
+        if (email == null) {
+            return false;
+        }
+        return email.contains("@") && email.contains(".");
     }
 
     public void close() {
