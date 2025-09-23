@@ -21,26 +21,6 @@ services:
       retries: 10
       start_period: 10s
 
-  app:
-    build:
-      context: /Users/liza/IdeaProjects/user-service
-    container_name: user-service
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/my_db
-      SPRING_DATASOURCE_USERNAME: developer
-      SPRING_DATASOURCE_PASSWORD: developer
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - app-network
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
 volumes:
   postgres_data:
 

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- === НАСТРОЙКА ВЫВОДА ЛОГОВ === -->
+
+    <!-- Паттерн для форматирования логов -->
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- Директория для лог-файлов -->
+    <property name="LOG_DIR" value="logs"/>
+    <property name="LOG_FILE" value="${LOG_DIR}/user-service.log"/>
+
+    <!-- === АППЕНДЕРЫ (куда пишем логи) === -->
+
+    <!-- 1. КОНСОЛЬНЫЙ АППЕНДЕР -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 2. ФАЙЛОВЫЙ АППЕНДЕР (ежедневная ротация) -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+
+        <!-- Политика ротации: по дате и размеру -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Паттерн для архивных файлов -->
+            <fileNamePattern>${LOG_DIR}/user-service.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <!-- Максимальный размер файла перед ротацией -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- Хранить логи за 30 дней -->
+            <maxHistory>30</maxHistory>
+            <!-- Общий максимальный размер логов -->
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- === НАСТРОЙКА УРОВНЕЙ ЛОГИРОВАНИЯ === -->
+
+    <!-- Логгер для нашего приложения -->
+    <logger name="ru.lisa" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Логгер для Hibernate SQL запросов -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Логгер для параметров SQL запросов -->
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Логгер для Hibernate (общий) -->
+    <logger name="org.hibernate" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Логгер для транзакций -->
+    <logger name="org.hibernate.transaction" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Корневой логгер (все остальное) -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
