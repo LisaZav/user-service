@@ -177,5 +177,13 @@ public class UserService {
 
     public void close() {
         logger.info("Закрытие ресурсов UserService");
+        try {
+            Class<?> hibernateUtilClass = Class.forName("ru.lisa.util.HibernateUtil");
+            var shutdownMethod = hibernateUtilClass.getMethod("shutdown");
+            shutdownMethod.invoke(null);
+            logger.info("Ресурсы Hibernate закрыты");
+        } catch (Exception e) {
+            logger.warn("Не удалось закрыть ресурсы Hibernate", e);
+        }
     }
 }

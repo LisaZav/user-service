@@ -15,9 +15,7 @@ import static ru.lisa.entity.Command.HELP;
 import static ru.lisa.entity.Command.READ_ALL;
 import static ru.lisa.entity.Command.UPDATE;
 
-/**
- * Hello world!
- */
+
 public class App {
     private static final Logger log = LoggerFactory.getLogger(App.class);
     private static Scanner scanner = new Scanner(System.in);

@@ -4,8 +4,8 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
-import ru.lisa.config.HibernateConfig;
 import ru.lisa.entity.User;
+import ru.lisa.util.HibernateUtil;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +15,7 @@ public class UserDaoImpl implements UserDao {
     private final SessionFactory sessionFactory;
 
     public UserDaoImpl() {
-        this.sessionFactory = HibernateConfig.getSessionFactory();
+        this.sessionFactory = HibernateUtil.getSessionFactory();
     }
 
     @Override
@@ -45,22 +45,17 @@ public class UserDaoImpl implements UserDao {
             User user = session.find(User.class, id);
             return Optional.ofNullable(user);
         } catch (Exception e) {
-            throw new RuntimeException("Ошибка при поиске Usera по ID: " + id, e);
+            throw new RuntimeException("Ошибка при поиске пользователя по ID: " + id, e);
         }
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
         try (Session session = sessionFactory.openSession()) {
-            // :email - именованный параметр, который мы установим ниже
             Query<User> query = session.createQuery(
                     "FROM User WHERE email = :email", User.class);
-
             query.setParameter("email", email);
-
-            // uniqueResult() возвращает один результат или null
             User user = query.uniqueResult();
-
             return Optional.ofNullable(user);
         } catch (Exception e) {
             throw new RuntimeException("Ошибка при поиске пользователя по email: " + email, e);
@@ -70,15 +65,12 @@ public class UserDaoImpl implements UserDao {
     @Override
     public List<User> findAll() {
         try (Session session = sessionFactory.openSession()) {
-            // "FROM User" - эквивалентно "SELECT * FROM users" в SQL
             Query<User> query = session.createQuery("FROM User", User.class);
-
             return query.getResultList();
         } catch (Exception e) {
             throw new RuntimeException("Ошибка при получении списка пользователей", e);
         }
     }
-
 
     @Override
     public void update(User user) {
@@ -87,8 +79,7 @@ public class UserDaoImpl implements UserDao {
 
         try {
             transaction = session.beginTransaction();
-            session.merge(user);  // merge() обновляет существующую запись в базе данных
-            // Если пользователь с таким ID существует, он будет обновлен
+            session.merge(user);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) {
@@ -100,7 +91,6 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
-
     @Override
     public boolean delete(Long id) {
         Session session = sessionFactory.openSession();
@@ -108,13 +98,12 @@ public class UserDaoImpl implements UserDao {
 
         try {
             transaction = session.beginTransaction();
-
             User user = session.find(User.class, id);
 
             if (user != null) {
                 session.remove(user);
                 transaction.commit();
-                return true; // Успешно удален
+                return true;
             } else {
                 transaction.rollback();
                 return false;
