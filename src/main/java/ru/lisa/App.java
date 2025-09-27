@@ -27,21 +27,25 @@ public class App {
     }
 
     private static void start() {
-        log.info("User Server Started.");
-        log.info(help());
-        try {
-            while (true) {
+        System.out.println("User Server Started ");
+        System.out.println(help());
+        while (true) {
+            try {
                 switch (scanner.nextLine()) {
                     case CREATE -> createUser();
                     case READ_ALL -> listUsers();
                     case UPDATE -> updateUser();
                     case DELETE -> deleteUser();
-                    case HELP -> log.info(help());
+                    case HELP -> System.out.println(help());
                     case EXIT -> System.exit(130);
+                    default -> System.out.println("Ошибка, выберите команду из предложенного меню " + help());
                 }
+
+
+            } catch (RuntimeException e) {
+                log.error("Произошла ошибка: ", e);
+                System.out.println("Ошибка, пожалуйста повторите попытку ");
             }
-        } catch (Exception e) {
-            log.error("Error: ", e);
         }
     }
 
@@ -49,7 +53,7 @@ public class App {
         return """
                 
                 
-                           === CRUD Help ===
+      
                 Description                 Command
                 
                 Добавить пользователя:      %s
@@ -63,11 +67,11 @@ public class App {
     }
 
     private static void createUser() {
-        log.info("Введите name: ");
+        System.out.println("Введите name: ");
         var name = scanner.nextLine();
-        log.info("Введите email: ");
+        System.out.println("Введите email: ");
         var email = scanner.nextLine();
-        log.info("Введите age: ");
+        System.out.println("Введите age: ");
         var age = scanner.nextInt();
 
         userService.createUser(name, email, age);
@@ -76,40 +80,92 @@ public class App {
     private static void listUsers() {
         List<User> users = userService.getAllUsers();
         if (users.isEmpty()) {
-            log.info("Список пуст");
+            System.out.println("Список пуст");
         } else {
-            log.info("=== Список пользователей ===");
+            System.out.println("=== Список пользователей ===");
             users.forEach(System.out::println);
         }
     }
 
     private static void updateUser() {
-        log.info("Введите ID пользователя для обновления: ");
-        var id = Long.parseLong(scanner.nextLine());
+        System.out.println("Введите ID пользователя для обновления: ");
+        long id = Long.parseLong(scanner.nextLine());
 
         var user = userService.getUserById(id);
         if (user.isEmpty()) {
-            log.info("Пользователь не найден!");
-        } else {
-
-            log.info("Новое имя (текущее: " + user.get().getName() + "): ");
-            String name = scanner.nextLine();
-            log.info("Новый email (текущий: " + user.get().getEmail() + "): ");
-            String email = scanner.nextLine();
-
-            userService.updateUser(id, name, email, user.get().getAge());
-            log.info("Данные обновлены!");
+            System.out.println("Пользователь не найден!");
+            return;
         }
+
+        User currentUser = user.get();
+
+        // Запрашиваем только те поля, которые пользователь хочет изменить
+        System.out.println("Какие данные вы хотите изменить?");
+        System.out.println("1 - Только имя");
+        System.out.println("2 - Только email");
+        System.out.println("3 - Только возраст");
+        System.out.println("4 - Несколько полей");
+        System.out.println("0 - Отмена");
+
+        String choice = scanner.nextLine();
+
+        String newName = currentUser.getName();
+        String newEmail = currentUser.getEmail();
+        int newAge = currentUser.getAge();
+
+        switch (choice) {
+            case "1":
+                System.out.print("Введите новое имя: ");
+                newName = scanner.nextLine();
+                break;
+
+            case "2":
+                System.out.print("Введите новый email: ");
+                newEmail = scanner.nextLine();
+                break;
+
+            case "3":
+                System.out.print("Введите новый возраст: ");
+                newAge = Integer.parseInt(scanner.nextLine());
+                break;
+
+            case "4":
+                // Можно оставить ваш исходный код для множественного обновления
+                System.out.print("Введите новое имя (текущее: " + currentUser.getName() + "): ");
+                String nameInput = scanner.nextLine();
+                if (!nameInput.isEmpty()) newName = nameInput;
+
+                System.out.print("Введите новый email (текущее: " + currentUser.getEmail() + "): ");
+                String emailInput = scanner.nextLine();
+                if (!emailInput.isEmpty()) newEmail = emailInput;
+
+                System.out.print("Введите новый возраст (текущее: " + currentUser.getAge() + "): ");
+                String ageInput = scanner.nextLine();
+                if (!ageInput.isEmpty()) newAge = Integer.parseInt(ageInput);
+                break;
+
+            case "0":
+                System.out.println("Отмена операции.");
+                return;
+
+            default:
+                System.out.println("Неверный выбор!");
+                return;
+        }
+
+        // Сохраняем изменения
+        userService.updateUser(id, newName, newEmail, newAge);
+        System.out.println("Данные обновлены!");
     }
 
     private static void deleteUser() {
-        log.info("Введите ID пользователя для удаления: ");
+        System.out.println("Введите ID пользователя для удаления: ");
         long id = Integer.parseInt(scanner.nextLine());
 
         if (userService.deleteUser(id)) {
-            log.info("Пользователь удален!");
+            System.out.println("Пользователь удален!");
         } else {
-            log.info("Пользователь не найден!");
+            System.out.println("Пользователь не найден!");
         }
     }
 }
