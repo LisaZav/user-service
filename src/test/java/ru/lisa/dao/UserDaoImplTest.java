@@ -1,17 +1,25 @@
 package ru.lisa.dao;
 
-import org.hibernate.Session;
-import org.junit.jupiter.api.*;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.lisa.entity.User;
 import ru.lisa.util.HibernateUtil;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @Testcontainers
@@ -22,31 +30,38 @@ class UserDaoImplTest {
     // Объявляем контейнер PostgreSQL, который будет под управлпением Testcontainers
     @Container
     private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:15-alpine")
-            .withDatabaseName("test_db")
-            .withUsername("test")
-            .withPassword("test");
+            .withDatabaseName("my_db")
+            .withUsername("developer")
+            .withPassword("developer");
 
+    private SessionFactory sessionFactory;
     private UserDaoImpl userDao;
 
 
     @BeforeAll
-        // метод перед всеми тестами
     void beforeAll() {
-        System.out.println("Запускаеем контейнер PostgreSQL: " + postgreSQLContainer.getJdbcUrl());
+        // Динамически создаём SessionFactory с URL от контейнера
+        Configuration configuration = new Configuration();
+        configuration.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+        configuration.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
+        configuration.setProperty("hibernate.connection.url", postgreSQLContainer.getJdbcUrl());
+        configuration.setProperty("hibernate.connection.username", postgreSQLContainer.getUsername());
+        configuration.setProperty("hibernate.connection.password", postgreSQLContainer.getPassword());
+        configuration.setProperty("hibernate.hbm2ddl.auto", "create-drop"); // или update, если нужно
+        configuration.setProperty("hibernate.show_sql", "true");
+        configuration.setProperty("hibernate.format_sql", "true");
 
-        // переопределение настройки Hibernate для подключения к контейнеру
-        System.setProperty("hibernate.connection.url", postgreSQLContainer.getJdbcUrl());
-        System.setProperty("hibernate.connection.username", postgreSQLContainer.getUsername());
-        System.setProperty("hibernate.connection.password", postgreSQLContainer.getPassword());
+        configuration.addAnnotatedClass(User.class);
 
-        // Пересоздание SFactory с новыми настройками
-        HibernateUtil.resetSessionFactory();
+        sessionFactory = configuration.buildSessionFactory();
+
+        HibernateUtil.setSessionFactory(sessionFactory);
     }
 
     @BeforeEach
     void setUp() {
         System.out.println("Инициализация UserDao перед тестом");
-        userDao = new UserDaoImpl();
+        userDao = new UserDaoImpl(sessionFactory);
     }
 
     @AfterEach
@@ -61,6 +76,7 @@ class UserDaoImplTest {
         User user = new User();
         user.setName("Maria Sam");
         user.setEmail("ma@rambler.com");
+        user.setCreatedAt(LocalDateTime.now());
 
         // When
         Long userId = userDao.save(user);

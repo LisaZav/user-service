@@ -7,7 +7,34 @@ import org.slf4j.LoggerFactory;
 
 public class HibernateUtil {
     private static final Logger logger = LoggerFactory.getLogger(HibernateUtil.class);
-    private static final SessionFactory sessionFactory = buildSessionFactory();
+    private static SessionFactory sessionFactory;
+
+    public static SessionFactory getSessionFactory() {
+        if (sessionFactory == null) {
+          sessionFactory  = buildSessionFactory();
+        }
+        return sessionFactory;
+    }
+
+    public static void setSessionFactory(SessionFactory sessionFactory) {
+        HibernateUtil.sessionFactory = sessionFactory;
+    }
+
+    public static void shutdown() {
+        logger.info("Закрытие SessionFactory...");
+        if (sessionFactory != null) {
+            sessionFactory.close();
+            logger.info("✅ SessionFactory закрыта");
+        }
+
+    }
+
+    public static void resetSessionFactory() {
+        if (sessionFactory != null && !sessionFactory.isClosed()) {
+            sessionFactory.close();
+        }
+    //  sessionFactory = null; // если надо принудительно пересоздавать при следующем вызове getSessionFactory()
+    }
 
     private static SessionFactory buildSessionFactory() {
         try {
@@ -24,22 +51,4 @@ public class HibernateUtil {
         }
     }
 
-    public static SessionFactory getSessionFactory() {
-        return sessionFactory;
-    }
-
-    public static void shutdown() {
-        logger.info("Закрытие SessionFactory...");
-        if (sessionFactory != null) {
-            sessionFactory.close();
-            logger.info("✅ SessionFactory закрыта");
-        }
-
-    }
-    public static void resetSessionFactory() {
-        if (sessionFactory != null && !sessionFactory.isClosed()) {
-            sessionFactory.close();
-        }
-    //  sessionFactory = null; // если надо принудительно пересоздавать при следующем вызове getSessionFactory()
-    }
 }

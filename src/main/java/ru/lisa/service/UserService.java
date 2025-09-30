@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import ru.lisa.dao.UserDao;
 import ru.lisa.dao.UserDaoImpl;
 import ru.lisa.entity.User;
+import ru.lisa.util.HibernateUtil;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +21,7 @@ public class UserService {
     }
 
     public UserService() {
-        this(new UserDaoImpl());
+        this(new UserDaoImpl(HibernateUtil.getSessionFactory()));
     }
 
     public Long createUser(String name, String email, Integer age) {
