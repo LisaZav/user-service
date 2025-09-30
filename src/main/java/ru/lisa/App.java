@@ -99,7 +99,6 @@ public class App {
 
         User currentUser = user.get();
 
-        // Запрашиваем только те поля, которые пользователь хочет изменить
         System.out.println("Какие данные вы хотите изменить?");
         System.out.println("1 - Только имя");
         System.out.println("2 - Только email");
@@ -145,7 +144,7 @@ public class App {
                 break;
 
             case "0":
-                System.out.println("Отмена операции.");
+                System.out.println("Отмена операции ");
                 return;
 
             default:
@@ -153,7 +152,6 @@ public class App {
                 return;
         }
 
-        // Сохраняем изменения
         userService.updateUser(id, newName, newEmail, newAge);
         System.out.println("Данные обновлены!");
     }
@@ -161,6 +159,7 @@ public class App {
     private static void deleteUser() {
         System.out.println("Введите ID пользователя для удаления: ");
         long id = Integer.parseInt(scanner.nextLine());
+
 
         if (userService.deleteUser(id)) {
             System.out.println("Пользователь удален!");

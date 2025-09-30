@@ -34,5 +34,12 @@ public class HibernateUtil {
             sessionFactory.close();
             logger.info("✅ SessionFactory закрыта");
         }
+
+    }
+    public static void resetSessionFactory() {
+        if (sessionFactory != null && !sessionFactory.isClosed()) {
+            sessionFactory.close();
+        }
+    //  sessionFactory = null; // если надо принудительно пересоздавать при следующем вызове getSessionFactory()
     }
 }
