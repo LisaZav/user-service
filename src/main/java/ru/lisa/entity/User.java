@@ -24,6 +24,7 @@ public class User {
     private LocalDateTime createdAt;
 
     public User() {
+        createdAt = LocalDateTime.now();
     }
 
     public User(String name, String email, Integer age) {

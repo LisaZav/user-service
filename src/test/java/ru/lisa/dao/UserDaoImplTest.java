@@ -12,7 +12,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.lisa.entity.User;
-import ru.lisa.util.HibernateUtil;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -40,22 +39,14 @@ class UserDaoImplTest {
 
     @BeforeAll
     void beforeAll() {
-        // Динамически создаём SessionFactory с URL от контейнера
         Configuration configuration = new Configuration();
-        configuration.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        configuration.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
         configuration.setProperty("hibernate.connection.url", postgreSQLContainer.getJdbcUrl());
         configuration.setProperty("hibernate.connection.username", postgreSQLContainer.getUsername());
         configuration.setProperty("hibernate.connection.password", postgreSQLContainer.getPassword());
-        configuration.setProperty("hibernate.hbm2ddl.auto", "create-drop"); // или update, если нужно
-        configuration.setProperty("hibernate.show_sql", "true");
-        configuration.setProperty("hibernate.format_sql", "true");
-
+        configuration.setProperty("hibernate.hbm2ddl.auto", "create-drop");
         configuration.addAnnotatedClass(User.class);
 
         sessionFactory = configuration.buildSessionFactory();
-
-        HibernateUtil.setSessionFactory(sessionFactory);
     }
 
     @BeforeEach
@@ -89,5 +80,25 @@ class UserDaoImplTest {
         assertTrue(savedUser.isPresent(), "Пользователь должен существовать в базе");
         assertEquals("Maria Sam", savedUser.get().getName());
         assertEquals("ma@rambler.com", savedUser.get().getEmail());
+    }
+
+    @Test
+    @DisplayName("Должен найти пользователя по ID")
+    void testFindById() {
+
+        // Given
+        User user = new User();
+        user.setEmail("sim@yandex.com");
+        user.setName("Max Sim");
+        Long userId = userDao.save(user);
+
+        // When
+        Optional<User> foundUser = userDao.findById(userId);
+
+        // Then
+        assertTrue(foundUser.isPresent());
+        assertEquals(userId, foundUser.get().getId(), "ID должен совпадать");
+        assertEquals("Max Sim", foundUser.get().getName(), "Имя должно совпадать");
+        assertEquals("sim@yandex.com", foundUser.get().getEmail());
     }
 }

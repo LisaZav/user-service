@@ -24,16 +24,9 @@ public class HibernateUtil {
         logger.info("Закрытие SessionFactory...");
         if (sessionFactory != null) {
             sessionFactory.close();
-            logger.info("✅ SessionFactory закрыта");
+            logger.info("SessionFactory закрыта");
         }
 
-    }
-
-    public static void resetSessionFactory() {
-        if (sessionFactory != null && !sessionFactory.isClosed()) {
-            sessionFactory.close();
-        }
-    //  sessionFactory = null; // если надо принудительно пересоздавать при следующем вызове getSessionFactory()
     }
 
     private static SessionFactory buildSessionFactory() {
@@ -43,10 +36,10 @@ public class HibernateUtil {
             // Автоматически загружает hibernate.cfg.xml из classpath
             SessionFactory factory = new Configuration().configure().buildSessionFactory();
 
-            logger.info("✅ SessionFactory успешно создана из конфигурационного файла");
+            logger.info("SessionFactory успешно создана из конфигурационного файла");
             return factory;
         } catch (Throwable ex) {
-            logger.error("❌ Ошибка при создании SessionFactory", ex);
+            logger.error("Ошибка при создании SessionFactory", ex);
             throw new ExceptionInInitializerError(ex);
         }
     }
