@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.lisa.dao.UserDao;
 import ru.lisa.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,6 +20,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,7 +97,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Проверка удаления")
+    @DisplayName("Проверка удаления по ID")
     void testDeleteUser() {
         //given
         long id = 1L;
@@ -105,5 +107,34 @@ class UserServiceTest {
         //then
         verify(userDao, times(1)).delete(any());
         assertTrue(actual);
+    }
+
+    @Test
+    @DisplayName("Поиск всех пользователей")
+    void testFindAll() {
+        //  given
+        when(userDao.findAll()).thenReturn(List.of(new User()));
+        // when
+        var allUsers = userService.getAllUsers();
+        // then
+        assertEquals(allUsers.size(), 1);
+    }
+
+    @Test
+    @DisplayName("Проверка обновления пользователя")
+    void testUpdateUser() {
+        //given
+        String name = "Leon Fix";
+        String email = "leon@rambler.com";
+        Integer age = 24;
+
+        var user = new User(name, email, age);
+        user.setId(23L);
+        when(userDao.findById(any())).thenReturn(Optional.of(user));
+        // when
+        userService.updateUser(23L, name, email, age);
+        //then
+        verify(userDao).update(any());
+        verify(userDao, never()).findByEmail(any());
     }
 }
