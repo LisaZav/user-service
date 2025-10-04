@@ -7,24 +7,94 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.lisa.dao.UserDao;
-import ru.lisa.dao.UserDaoImpl;
+import ru.lisa.entity.User;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class) //1
+@ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock //2
+    @Mock
     private UserDao userDao;
 
-    @InjectMocks //3
-    private UserService userService;
+    @InjectMocks
+    private UserServiceImpl userService;
 
-    @Test //4
+    @Test
+    @DisplayName("Проверка создания пользователя")
+    void testCreateUser() {
+        //given
+        String name = "Leon Fix";
+        String email = "leon@rambler.com";
+        Integer age = 24;
+        when(userDao.save(any())).thenReturn(1L);
+        when(userDao.findByEmail(email)).thenReturn(Optional.empty());
+        //when
+        long actual = userService.createUser(name, email, age);
+        //then
+        verify(userDao, times(1)).save(any());
+        verify(userDao, times(1)).findByEmail(any());
+        assertEquals(1L, actual);
+    }
+
+    @Test
+    @DisplayName("Создание пользователя с существующим email должно выбрасывать исключение")
+    void testCreateUserWithExistingEmail() {
+        //given
+        String name = "Leon Fix";
+        String email = "leon@rambler.com";
+        Integer age = 24;
+
+        when(userDao.findByEmail(any())).thenReturn(Optional.of(new User()));
+        //when & then
+        assertThrows(IllegalArgumentException.class,
+                () -> userService.createUser(name, email, age));
+
+        verify(userDao, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Получение пользователя по валидному ID")
+    void testGetUserByIdWithValidId() {
+        //given
+        Long userId = 1L;
+        User user = new User("Leon Fix", "leon@rambler.com", 24);
+        when(userDao.findById(userId)).thenReturn(Optional.of(user));
+
+        //when
+        Optional<User> actual = userService.getUserById(userId);
+
+        //then
+        assertTrue(actual.isPresent());
+        assertEquals(user, actual.get());
+        verify(userDao, times(1)).findById(userId);
+    }
+
+    @Test
+    @DisplayName("Получение пользователя по отрицательному ID должно выбрасывать исключение")
+    void testGetUserByIdWithNegativeId() {
+        //given
+        Long userId = -1L;
+
+        //when & then
+        assertThrows(IllegalArgumentException.class,
+                () -> userService.getUserById(userId));
+
+        verify(userDao, never()).findById(anyLong());
+
+    }
+
+    @Test
     @DisplayName("Проверка удаления")
     void testDeleteUser() {
         //given
@@ -32,10 +102,8 @@ class UserServiceTest {
         when(userDao.delete(id)).thenReturn(true);
         //when
         boolean actual = userService.deleteUser(id);
-
         //then
         verify(userDao, times(1)).delete(any());
         assertTrue(actual);
-        System.out.println("👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿👍🏿");
     }
 }

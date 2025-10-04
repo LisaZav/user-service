@@ -1,22 +1,29 @@
 package ru.lisa.dao;
 
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.lisa.entity.User;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -57,7 +64,17 @@ class UserDaoImplTest {
 
     @AfterEach
     void tearDown() {
-        System.out.println("Очистка после теста"); //отчистка БД если она нужна
+        Session session = sessionFactory.openSession();
+        Transaction transaction = session.beginTransaction();
+        try {
+            session.createMutationQuery("DELETE FROM User").executeUpdate();
+            transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
+            throw new RuntimeException("Ошибка при очистке базы данных", e);
+        } finally {
+            session.close();
+        }
     }
 
     @Test
@@ -101,4 +118,93 @@ class UserDaoImplTest {
         assertEquals("Max Sim", foundUser.get().getName(), "Имя должно совпадать");
         assertEquals("sim@yandex.com", foundUser.get().getEmail());
     }
+
+    @Test
+    @DisplayName("Должен найти пользователя по email")
+    void findUserByEmail() {
+        // Given
+        User user = new User();
+        user.setEmail("bm@ya.com");
+        user.setName("Bob Morly");
+        userDao.save(user);
+
+        //  When
+        Optional<User> foundUser = userDao.findByEmail("bm@ya.com");
+
+        // Then
+        assertTrue(foundUser.isPresent(), "Пользователь с указанным email должен быть найден");
+        assertEquals("Bob Morly", foundUser.get().getName(), "Имя должно совпадать");
+        assertEquals("bm@ya.com", foundUser.get().getEmail(), "Email должен совпадать");
+    }
+
+    @Test
+    @DisplayName("Должен вернуть пустой результат при поиске по несуществующему ID")
+    void returnEmptyWhenUserNotFoundById() { // Не создаем пользователей - база пуста
+        // Given
+
+        //  When
+        Optional<User> foundUser = userDao.findById(999L);
+
+        // Then
+        assertFalse(foundUser.isPresent());
+    }
+
+    @Test
+    @DisplayName("Должен вернуть всех пользователей")
+    void findAllUsers() {
+        // Given
+        User user1 = new User();
+        user1.setEmail("bm2@ya.com");
+        user1.setName("Bob Morly");
+        userDao.save(user1);
+
+        User user2 = new User();
+        user2.setEmail("sorvarayavish@ya.com");
+        user2.setName("Vishenka Sorvanaya");
+        userDao.save(user2);
+        // When
+        List<User> users = userDao.findAll();
+
+        // Then
+        assertNotNull(users, "Список пользователей не должен быть null");
+        assertEquals(2, users.size(), "Должны вернуться ровно 2 пользователя");
+    }
+
+    @Test
+    @DisplayName("Должен обновить данные пользователя")
+    void testUpdateUser() {
+        // Given
+        User user = new User();
+        user.setEmail("update@rambler.com");
+        user.setName("Original");
+        Long userId = userDao.save(user);
+
+        var byId = userDao.findById(userId).get();
+        byId.setName("NewName");
+
+        // When
+        userDao.update(byId);
+        // Then
+        User updatedUser = userDao.findById(userId).get();
+        assertEquals("NewName", updatedUser.getName());
+    }
+
+    @Test
+    @DisplayName("Удаление пользователя по ID")
+    void testDeleteUserById() {
+        // Given
+        User user = new User();
+        user.setEmail("delete@example.com");
+        user.setName("V");
+
+        Long userId = userDao.save(user);
+
+        // When
+        boolean deleteResult = userDao.delete(userId);
+
+        // Then
+        assertTrue(deleteResult);
+        assertTrue(userDao.findById(userId).isEmpty(), "Пользователь должен быть удален из базы");
+    }
 }
+

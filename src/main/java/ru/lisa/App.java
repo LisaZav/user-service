@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.lisa.entity.User;
 import ru.lisa.service.UserService;
+import ru.lisa.service.UserServiceImpl;
 
 import java.util.List;
 import java.util.Scanner;
@@ -22,7 +23,7 @@ public class App {
     private static UserService userService;
 
     public static void main(String[] args) {
-        userService = new UserService();
+        userService = new UserServiceImpl();
         start();
     }
 
