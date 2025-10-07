@@ -4,11 +4,13 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users", indexes = @Index(columnList = "email", unique = true, name = "user_email_index"))
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_email_unique", columnList = "email", unique = true)
+})
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
     @Column(name = "name", nullable = false, length = 100)
@@ -20,11 +22,11 @@ public class User {
     @Column(name = "age")
     private Integer age;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public User() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 
     public User(String name, String email, Integer age) {
@@ -34,7 +36,6 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Геттеры и сеттеры для всех полей
     public Long getId() {
         return id;
     }
@@ -47,32 +48,28 @@ public class User {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getEmail() {
         return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public Integer getAge() {
         return age;
     }
 
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 
     @Override

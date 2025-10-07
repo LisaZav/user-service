@@ -6,3 +6,5 @@ spring:
     password: developer
     url: jdbc:postgresql://localhost:5432/my_db
     username: developer
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
