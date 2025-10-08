@@ -1,5 +1,7 @@
 package ru.lisa.dto;
 
+import ru.lisa.entity.User;
+
 import java.time.LocalDateTime;
 
 public class UserDto {
@@ -61,7 +63,7 @@ public class UserDto {
         this.createdAt = createdAt;
     }
 
-    public static UserDto fromEntity(ru.lisa.entity.User user) {
+    public static UserDto fromEntity(User user) {
         if (user == null) {
             return null;
         }
