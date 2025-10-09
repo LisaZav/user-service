@@ -16,6 +16,10 @@ import ru.lisa.service.UserService;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.springframework.http.ResponseEntity.noContent;
+import static org.springframework.http.ResponseEntity.notFound;
+import static org.springframework.http.ResponseEntity.ok;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -30,23 +34,20 @@ public class UserController {
     public ResponseEntity<UserDto> createUser(@RequestBody UserDto request) {
         Long userId = userService.createUser(request.getName(), request.getEmail(), request.getAge());
         var user = userService.getUserById(userId).orElseThrow();
-        return ResponseEntity.ok().body(UserDto.fromEntity(user));
+        return ok().body(UserDto.fromEntity(user));
     }
 
     @PutMapping
     public ResponseEntity<Void> updateUser(@RequestBody UserDto dto) {
         userService.updateUser(dto.getId(), dto.getName(), dto.getEmail(), dto.getAge());
-        return ResponseEntity.ok().build();
+        return ok().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         var user = userService.getUserById(id);
-        if (user.isPresent()) {
-            return ResponseEntity.ok(UserDto.fromEntity(user.get()));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return user.map(value -> ok(UserDto.fromEntity(value)))
+                .orElseGet(() -> notFound().build());
     }
 
     @GetMapping
@@ -63,9 +64,9 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         boolean deleted = userService.deleteUser(id);
         if (deleted) {
-            return ResponseEntity.noContent().build();
+            return noContent().build();
         } else {
-            return ResponseEntity.notFound().build();
+            return notFound().build();
         }
     }
 }

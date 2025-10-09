@@ -10,7 +10,6 @@ import ru.lisa.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 
-
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
@@ -73,7 +72,6 @@ public class UserServiceImpl implements UserService {
                     return new IllegalArgumentException("Пользователь с ID " + userId + " не найден");
                 });
 
-        // Проверяем, меняется ли email
         if (!existingUser.getEmail().equals(email)) {
             if (userRepository.findByEmail(email).isPresent()) {
                 logger.warn("Конфликт email: '{}' уже используется", email);

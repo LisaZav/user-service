@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.lisa.dto.UserDto;
 import ru.lisa.entity.User;
@@ -20,6 +19,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -59,7 +60,7 @@ class UserControllerTest {
         when(userService.getUserById(1L)).thenReturn(Optional.of(savedUser));
 
         mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -90,7 +91,7 @@ class UserControllerTest {
 
     @Test
     @DisplayName("PUT /api/users — успешно обновляет пользователя")
-    void shouldUpdateUser() throws Exception {
+    void UpdateUser() throws Exception {
         UserDto updateDto = new UserDto();
         updateDto.setId(1L);
         updateDto.setName("Alice Updated");
@@ -98,11 +99,58 @@ class UserControllerTest {
         updateDto.setAge(31);
 
         mockMvc.perform(put("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDto)))
                         .andExpect(status().isOk());
 
         verify(userService).updateUser(1L, "Alice Updated", "alice@example.com", 31);
     }
 
+    @Test
+    @DisplayName("POST /api/users — возвращает ошибку при попытке создать пользователя с уже существующим email")
+    void ReturnConflictWithExistingEmail() throws Exception {
+        UserDto requestDto = new UserDto();
+        requestDto.setName("Alice");
+        requestDto.setEmail("alice@rambler.com");
+        requestDto.setAge(36);
+
+        when(userService.createUser(anyString(), anyString(), anyInt()))
+                .thenThrow(new IllegalArgumentException("Пользователь с email 'alice@rambler.com' уже существует"));
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/users/{id} — delete пользователя по ID")
+    void deleteUserById() throws Exception {
+        User user = new User("Bob", "bob@ya.com", 25);
+        user.setId(2L); // id устанавливается отдельно, createdAt — уже в конструкторе
+
+        when(userService.deleteUser(2L)).thenReturn(true);
+
+        mockMvc.perform(delete("/api/users/2"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("UPDATE /api/users — update пользователя")
+    void updateUser() throws Exception {
+        User user = new User("Bob", "bob@ya.com", 25);
+
+        mockMvc.perform(put("/api/users")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/users — get all пользователей")
+    void getAllUsers() throws Exception {
+
+        mockMvc.perform(get("/api/users"))
+                .andExpect(status().isOk());
+    }
 }
