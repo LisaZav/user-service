@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.lisa.entity.User;
+import ru.lisa.event.UserEvent;
 import ru.lisa.repository.UserRepository;
 
 import java.util.List;
@@ -30,8 +31,12 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private KafkaTemplate<String, UserEvent> kafkaTemplate;
+
     @InjectMocks
     private UserServiceImpl userService;
+
 
 
     @Test

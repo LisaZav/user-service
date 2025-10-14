@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
         response.put("error", ex.getMessage() != null ? ex.getMessage() : "Неизвестная ошибка");
-
+        ex.printStackTrace();
         return ResponseEntity.badRequest().body(response);
     }
 }

@@ -3,30 +3,37 @@ package ru.lisa.service;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import ru.lisa.entity.User;
+import ru.lisa.event.EventType;
+import ru.lisa.event.UserEvent;
 import ru.lisa.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
+
+import static ru.lisa.util.GsonUtil.GSON;
 
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    private static final String USER_EVENTS_TOPIC = "user-events";
 
     private final UserRepository userRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, KafkaTemplate<String, String> kafkaTemplate) {
         this.userRepository = userRepository;
-        logger.info("UserService инициализирован с Spring Data JPA");
+        this.kafkaTemplate = kafkaTemplate;
+        logger.info("UserService инициализирован с Spring Data JPA и Kafka");
     }
 
     @Override
     public Long createUser(String name, String email, Integer age) {
         logger.debug("Попытка создания пользователя: name={}, email={}, age={}", name, email, age);
-
         validateUserData(name, email, age);
 
         if (userRepository.findByEmail(email).isPresent()) {
@@ -37,7 +44,10 @@ public class UserServiceImpl implements UserService {
         User newUser = new User(name, email, age);
         User savedUser = userRepository.save(newUser);
 
-        logger.info("Создан новый пользователь: ID={}, email={}", savedUser.getId(), email);
+        // Отправка события CREATED в Kafka
+        kafkaTemplate.send(USER_EVENTS_TOPIC, GSON.toJson(new UserEvent(EventType.CREATED, email)));
+        logger.info("Создан новый пользователь: ID={}, email={}. Событие отправлено в Kafka.", savedUser.getId(), email);
+
         return savedUser.getId();
     }
 
@@ -82,7 +92,6 @@ public class UserServiceImpl implements UserService {
         existingUser.setName(name);
         existingUser.setEmail(email);
         existingUser.setAge(age);
-
         userRepository.save(existingUser);
         logger.info("Пользователь с ID {} успешно обновлён", userId);
     }
@@ -93,13 +102,19 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Некорректный ID пользователя");
         }
 
-        if (!userRepository.existsById(id)) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
             logger.warn("Попытка удаления несуществующего пользователя с ID: {}", id);
             return false;
         }
 
+        String email = userOpt.get().getEmail();
         userRepository.deleteById(id);
-        logger.info("Пользователь с ID {} успешно удалён", id);
+
+        // Отправка события DELETED в Kafka
+        kafkaTemplate.send(USER_EVENTS_TOPIC, GSON.toJson((new UserEvent(EventType.DELETED, email))));
+        logger.info("Пользователь с ID {} успешно удалён. Событие отправлено в Kafka.", id);
+
         return true;
     }
 
@@ -110,11 +125,9 @@ public class UserServiceImpl implements UserService {
         if (name.trim().length() > 100) {
             throw new IllegalArgumentException("Имя не может превышать 100 символов");
         }
-
         if (email == null || email.trim().isEmpty()) {
             throw new IllegalArgumentException("Email не может быть пустым");
         }
-
         if (age == null) {
             throw new IllegalArgumentException("Возраст не может быть null");
         }
