@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.core.KafkaTemplate;
 import ru.lisa.entity.User;
 import ru.lisa.event.UserEvent;
 import ru.lisa.repository.UserRepository;
@@ -36,8 +37,6 @@ class UserServiceTest {
 
     @InjectMocks
     private UserServiceImpl userService;
-
-
 
     @Test
     @DisplayName("Проверка создания пользователя")
@@ -122,33 +121,35 @@ class UserServiceTest {
     void testDeleteUser() {
         // given
         long id = 1L;
-        when(userRepository.existsById(id)).thenReturn(true); // пользователь существует
+        User user = new User();
+        user.setEmail("test@example.com");
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
 
         // when
         boolean actual = userService.deleteUser(id);
 
         // then
         assertTrue(actual);
-        verify(userRepository, times(1)).existsById(id);
+        verify(userRepository, times(1)).findById(id);
         verify(userRepository, times(1)).deleteById(id);
-    }
 
+    }
     @Test
     @DisplayName("Удаление несуществующего пользователя должно возвращать false")
     void testDeleteUserNotFound() {
         // given
         long id = 999L;
-        when(userRepository.existsById(id)).thenReturn(false);
+        when(userRepository.findById(id)).thenReturn(Optional.empty());
 
         // when
         boolean actual = userService.deleteUser(id);
 
         // then
         assertFalse(actual);
-        verify(userRepository, times(1)).existsById(id);
+        verify(userRepository, times(1)).findById(id);
         verify(userRepository, never()).deleteById(anyLong());
-    }
 
+    }
     @Test
     @DisplayName("Поиск всех пользователей")
     void testFindAll() {

@@ -44,7 +44,6 @@ public class UserServiceImpl implements UserService {
         User newUser = new User(name, email, age);
         User savedUser = userRepository.save(newUser);
 
-        // Отправка события CREATED в Kafka
         kafkaTemplate.send(USER_EVENTS_TOPIC, GSON.toJson(new UserEvent(EventType.CREATED, email)));
         logger.info("Создан новый пользователь: ID={}, email={}. Событие отправлено в Kafka.", savedUser.getId(), email);
 
@@ -111,7 +110,6 @@ public class UserServiceImpl implements UserService {
         String email = userOpt.get().getEmail();
         userRepository.deleteById(id);
 
-        // Отправка события DELETED в Kafka
         kafkaTemplate.send(USER_EVENTS_TOPIC, GSON.toJson((new UserEvent(EventType.DELETED, email))));
         logger.info("Пользователь с ID {} успешно удалён. Событие отправлено в Kafka.", id);
 
