@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.lisa.dto.UserDto;
+import ru.lisa.dto.UserModel;
 import ru.lisa.entity.User;
 import ru.lisa.service.UserService;
 
@@ -34,21 +34,20 @@ class UserControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper; //преобразовывает объект в JSON-строку
+    private ObjectMapper objectMapper;
 
     @MockBean
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        // Регистрация модуля для поддержки LocalDateTime в JSON
         objectMapper.registerModule(new JavaTimeModule());
     }
 
     @Test
     @DisplayName("POST /api/users — успешно создаёт пользователя")
     void CreateUser() throws Exception {
-        UserDto requestDto = new UserDto();
+        UserModel requestDto = new UserModel();
         requestDto.setName("Alice");
         requestDto.setEmail("alice@rambler.com");
         requestDto.setAge(36);
@@ -67,7 +66,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.name").value("Alice"))
                 .andExpect(jsonPath("$.email").value("alice@rambler.com"))
                 .andExpect(jsonPath("$.age").value(36))
-                .andExpect(jsonPath("$.createdAt").exists()); // просто проверяем, что поле есть
+                .andExpect(jsonPath("$.createdAt").exists());
 
         verify(userService).createUser("Alice", "alice@rambler.com", 36);
     }
@@ -76,7 +75,7 @@ class UserControllerTest {
     @DisplayName("GET /api/users/{id} — возвращает пользователя по ID")
     void dGetUserById() throws Exception {
         User user = new User("Bob", "bob@ya.com", 25);
-        user.setId(2L); // id устанавливается отдельно, createdAt — уже в конструкторе
+        user.setId(2L);
 
         when(userService.getUserById(2L)).thenReturn(Optional.of(user));
 
@@ -92,16 +91,26 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/users — успешно обновляет пользователя")
     void UpdateUser() throws Exception {
-        UserDto updateDto = new UserDto();
+        UserModel updateDto = new UserModel();
         updateDto.setId(1L);
         updateDto.setName("Alice Updated");
         updateDto.setEmail("alice@example.com");
         updateDto.setAge(31);
 
+        User updatedUser = new User("Alice Updated", "alice@example.com", 31);
+        updatedUser.setId(1L);
+
+        when(userService.getUserById(1L)).thenReturn(Optional.of(updatedUser));
+
         mockMvc.perform(put("/api/users")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDto)))
-                        .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Alice Updated"))
+                .andExpect(jsonPath("$.email").value("alice@example.com"))
+                .andExpect(jsonPath("$.age").value(31))
+                .andExpect(jsonPath("$.createdAt").exists());
 
         verify(userService).updateUser(1L, "Alice Updated", "alice@example.com", 31);
     }
@@ -109,7 +118,7 @@ class UserControllerTest {
     @Test
     @DisplayName("POST /api/users — возвращает ошибку при попытке создать пользователя с уже существующим email")
     void ReturnConflictWithExistingEmail() throws Exception {
-        UserDto requestDto = new UserDto();
+        UserModel requestDto = new UserModel();
         requestDto.setName("Alice");
         requestDto.setEmail("alice@rambler.com");
         requestDto.setAge(36);
@@ -126,9 +135,6 @@ class UserControllerTest {
     @Test
     @DisplayName("DELETE /api/users/{id} — delete пользователя по ID")
     void deleteUserById() throws Exception {
-        User user = new User("Bob", "bob@ya.com", 25);
-        user.setId(2L); // id устанавливается отдельно, createdAt — уже в конструкторе
-
         when(userService.deleteUser(2L)).thenReturn(true);
 
         mockMvc.perform(delete("/api/users/2"))
@@ -136,20 +142,8 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("UPDATE /api/users — update пользователя")
-    void updateUser() throws Exception {
-        User user = new User("Bob", "bob@ya.com", 25);
-
-        mockMvc.perform(put("/api/users")
-                        .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isOk());
-    }
-
-    @Test
     @DisplayName("GET /api/users — get all пользователей")
     void getAllUsers() throws Exception {
-
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk());
     }
