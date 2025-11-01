@@ -1,5 +1,6 @@
 package ru.lisa.kafka;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -19,6 +20,7 @@ public class UserEventProducerImpl implements UserEventProducer {
     private String topic;
 
     @Override
+    @CircuitBreaker(name = "kafkaProducer", fallbackMethod = "sendFallback")
     public void send(EventType eventType, String email) {
         kafkaTemplate.send(topic, GSON.toJson((new UserEvent(EventType.DELETED, email))));
     }
