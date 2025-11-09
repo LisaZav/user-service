@@ -7,7 +7,7 @@ RUN mvn dependency:go-offline -B
 
 RUN mvn package
 
-FROM openjdk:17-alpine
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 COPY --from=builder /app/target/user-service-1.0.jar app.jar
